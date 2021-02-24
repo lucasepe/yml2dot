@@ -1,0 +1,50 @@
+# This is an example goreleaser.yaml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+# Run locally with: goreleaser --rm-dist --snapshot --skip-publish
+project_name: yml2dot
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+builds:
+- binary: '{{ .ProjectName }}'
+  main: ./main.go
+  env:
+    - CGO_ENABLED=0
+  ldflags:
+    - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}}
+    - -a -extldflags "-static"
+  goos:
+      - windows
+      - linux
+      - darwin
+  goarch:
+      - amd64
+archives:
+- replacements:
+    darwin: macOS
+    windows: win
+    amd64: 64-bit
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .ProjectName }}_{{ .Tag }}"
+nfpms:
+  -
+    package_name: yml2dot
+    vendor: Luca Sepe
+    homepage: https://lucasepe.it/
+    maintainer: Luca Sepe <luca.sepe@gmail.com>
+    description: Turn YAML into beautiful Graph.
+    license: MIT
+    replacements:
+      amd64: 64-bit
+    formats:
+      - deb
+      - rpm
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
