@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -14,13 +14,13 @@ const (
 )
 
 // Parse read content from a io.Reader and returns the YAML tree.
-func Parse(reader io.Reader, blockStart, blockEnd string) (interface{}, error) {
+func Parse(reader io.Reader, blockStart, blockEnd string) (yaml.MapSlice, error) {
 	front, err := fetchYAML(reader, blockStart, blockEnd)
 	if err != nil {
 		return nil, err
 	}
 
-	var res interface{}
+	var res yaml.MapSlice
 	err = yaml.Unmarshal(front, &res)
 	if err != nil {
 		return nil, err

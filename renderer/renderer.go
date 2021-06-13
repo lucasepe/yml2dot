@@ -2,44 +2,83 @@ package renderer
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/lucasepe/dot"
+	"gopkg.in/yaml.v2"
 )
 
 // Render returns a GraphViz representation of a YAML tree.
-func Render(v interface{}) string {
+func Render(v yaml.MapSlice) *dot.Graph {
 	g := dot.NewGraph(dot.Directed)
-	g.Attrs("nodesep", "0.8", "pad", "1", "rankdir", "LR", "ranksep", "1.2 equally")
-	g.NodeGlobalAttrs("fontname", "monospace", "fontsize", "10", "margin", "0.4,0.2", "penwidth", "1.5", "shape", "rectangle", "style", "rounded,filled")
+	g.Attr("nodesep", "0.4")
+	g.Attr("rankdir", "LR")
+	g.Attr("pad", "0.5")
+	g.Attr("ranksep", "0.25 equally")
+	g.Attr("fontname", "Fira Mono")
+	g.Attr("fontsize", "14")
 
-	renderVal(v, g, nil)
+	g.NodeBaseAttrs().
+		Attr("fontname", "Fira Mono").
+		Attr("fontsize", "10").
+		Attr("margin", "0.3,0.1").
+		Attr("fillcolor", "#fafafa").
+		Attr("shape", "box").
+		Attr("penwidth", "2.0").
+		Attr("style", "rounded,filled")
 
-	return g.String()
+	for _, el := range v {
+		renderMapItem(el, g, nil)
+	}
+
+	return g
+}
+
+func renderMapItem(v yaml.MapItem, g *dot.Graph, parent *dot.Node) {
+	child := g.Node()
+	if parent != nil {
+		child.Attr("label", fmt.Sprintf("%v", v.Key))
+
+		link := g.Edge(parent, child)
+		link.Attr("arrowhead", "none")
+		link.Attr("penwidth", "2.0")
+	} else {
+		child.Attr("label", dot.HTML(fmt.Sprintf("<b>%v</b>", v.Key)))
+		child.Attr("shape", "plaintext")
+		child.Attr("style", "")
+	}
+
+	renderVal(v.Value, g, child)
 }
 
 func renderVal(v interface{}, g *dot.Graph, parent *dot.Node) {
-	typ := reflect.TypeOf(v).Kind()
 
-	if typ == reflect.Slice {
+	switch v.(type) {
+	case []interface{}:
 		renderSlice(v.([]interface{}), g, parent)
-		return
-	}
-
-	if typ == reflect.Map {
+	case yaml.MapSlice:
+		for _, el := range v.(yaml.MapSlice) {
+			renderMapItem(el, g, parent)
+		}
+	case map[string]interface{}:
 		renderMap(v.(map[string]interface{}), g, parent)
-		return
+	default:
+		child := g.Node()
+		child.Attr("label", fmt.Sprintf("%v", v))
+		if parent != nil {
+			link := g.Edge(parent, child)
+			link.Attr("arrowhead", "none")
+			link.Attr("penwidth", "2.0")
+		}
 	}
-
-	child := g.Node(fmt.Sprintf("%v", v))
-	g.Edge(parent, child)
 }
 
 func renderMap(m map[string]interface{}, g *dot.Graph, parent *dot.Node) {
 	for k, v := range m {
-		child := g.Node(k)
+		child := g.Node(dot.WithLabel(k))
 		if parent != nil {
-			g.Edge(parent, child)
+			link := g.Edge(parent, child)
+			link.Attr("arrowhead", "none")
+			link.Attr("penwidth", "2.0")
 		}
 		renderVal(v, g, child)
 	}

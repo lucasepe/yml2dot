@@ -5,6 +5,6 @@ go 1.16
 // replace github.com/lucasepe/dot => ../dot
 
 require (
-	github.com/lucasepe/dot v0.2.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	github.com/lucasepe/dot v0.4.3
+	gopkg.in/yaml.v2 v2.4.0
 )

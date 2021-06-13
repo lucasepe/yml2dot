@@ -5,6 +5,25 @@ import (
 	"testing"
 )
 
+func TestParse(t *testing.T) {
+	yaml := `apiVersion: v3
+kind: Pod
+metadata:
+  name: rss-site
+  labels:
+    app: web
+`
+
+	res, err := Parse(strings.NewReader(yaml), "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := len(res), 3; got != want {
+		t.Fatalf("expected length [3], got [%d]", got)
+	}
+}
+
 func TestFullScan(t *testing.T) {
 	yaml := `apiVersion: v3
 kind: Pod
