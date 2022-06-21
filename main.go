@@ -21,6 +21,7 @@ const (
 var (
 	flagBlockStart string
 	flagBlockEnd   string
+	isCacheEnabled bool
 )
 
 func main() {
@@ -38,7 +39,7 @@ func main() {
 	res, err := parser.Parse(src, flagBlockStart, flagBlockEnd)
 	exitOnErr(err)
 
-	fmt.Print(renderer.Render(res))
+	fmt.Print(renderer.Render(res, isCacheEnabled))
 }
 
 func configureFlags() {
@@ -53,7 +54,7 @@ func configureFlags() {
 
 		fmt.Print("EXAMPLE(s):\n\n")
 		fmt.Printf("  %s -from '/****' -to '****/' MyClass.java | dot -Tpng > output.png\n", name)
-		fmt.Printf("  %s config.yml | dot -Tpng > output.png\n\n", name)
+		fmt.Printf("  %s -cacheValues config.yml | dot -Tpng > output.png\n\n", name)
 
 		fmt.Print("FLAGS:\n\n")
 		flag.CommandLine.SetOutput(os.Stdout)
@@ -70,6 +71,7 @@ func configureFlags() {
 
 	flag.CommandLine.StringVar(&flagBlockStart, "from", "", "pattern that marks the beginning of the YAML block")
 	flag.CommandLine.StringVar(&flagBlockEnd, "to", "", "pattern that marks the end of the YAML block")
+	flag.CommandLine.BoolVar(&isCacheEnabled, "cacheValues", false, "re-use the leaf nodes")
 
 	flag.CommandLine.Parse(os.Args[1:])
 }
