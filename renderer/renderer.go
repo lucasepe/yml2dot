@@ -7,8 +7,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var childCache map[string]*dot.Node
+
 // Render returns a GraphViz representation of a YAML tree.
-func Render(v yaml.MapSlice) *dot.Graph {
+func Render(v yaml.MapSlice, isCacheEnabled bool) *dot.Graph {
 	g := dot.NewGraph(dot.Directed)
 	g.Attr("nodesep", "0.4")
 	g.Attr("rankdir", "LR")
@@ -27,13 +29,13 @@ func Render(v yaml.MapSlice) *dot.Graph {
 		Attr("style", "rounded,filled")
 
 	for _, el := range v {
-		renderMapItem(el, g, nil)
+		renderMapItem(el, g, nil, isCacheEnabled)
 	}
 
 	return g
 }
 
-func renderMapItem(v yaml.MapItem, g *dot.Graph, parent *dot.Node) {
+func renderMapItem(v yaml.MapItem, g *dot.Graph, parent *dot.Node, isCacheEnabled bool) {
 	child := g.Node()
 	if parent != nil {
 		child.Attr("label", fmt.Sprintf("%v", v.Key))
@@ -47,23 +49,39 @@ func renderMapItem(v yaml.MapItem, g *dot.Graph, parent *dot.Node) {
 		child.Attr("style", "")
 	}
 
-	renderVal(v.Value, g, child)
+	renderVal(v.Value, g, child, isCacheEnabled)
 }
 
-func renderVal(v interface{}, g *dot.Graph, parent *dot.Node) {
+// getVal - return new Nodes, or use an optional cache
+func getVal(g *dot.Graph, label string, isCacheEnabled bool) *dot.Node {
+	child, present := childCache[label]
+	if !present {
+		child = g.Node()
+		child.Attr("label", label)
+		if isCacheEnabled {
+			// A nil map is always empty, create a cache only when needed
+			if childCache == nil {
+				childCache = make(map[string]*dot.Node)
+			}
+			childCache[label] = child
+		}
+	}
+	return child
+}
 
+func renderVal(v interface{}, g *dot.Graph, parent *dot.Node, isCacheEnabled bool) {
 	switch v.(type) {
 	case []interface{}:
-		renderSlice(v.([]interface{}), g, parent)
+		renderSlice(v.([]interface{}), g, parent, isCacheEnabled)
 	case yaml.MapSlice:
 		for _, el := range v.(yaml.MapSlice) {
-			renderMapItem(el, g, parent)
+			renderMapItem(el, g, parent, isCacheEnabled)
 		}
 	case map[string]interface{}:
-		renderMap(v.(map[string]interface{}), g, parent)
+		renderMap(v.(map[string]interface{}), g, parent, isCacheEnabled)
 	default:
-		child := g.Node()
-		child.Attr("label", fmt.Sprintf("%v", v))
+		label := fmt.Sprintf("%v", v)
+		child := getVal(g, label, isCacheEnabled)
 		if parent != nil {
 			link := g.Edge(parent, child)
 			link.Attr("arrowhead", "none")
@@ -72,7 +90,7 @@ func renderVal(v interface{}, g *dot.Graph, parent *dot.Node) {
 	}
 }
 
-func renderMap(m map[string]interface{}, g *dot.Graph, parent *dot.Node) {
+func renderMap(m map[string]interface{}, g *dot.Graph, parent *dot.Node, isCacheEnabled bool) {
 	for k, v := range m {
 		child := g.Node(dot.WithLabel(k))
 		if parent != nil {
@@ -80,12 +98,12 @@ func renderMap(m map[string]interface{}, g *dot.Graph, parent *dot.Node) {
 			link.Attr("arrowhead", "none")
 			link.Attr("penwidth", "2.0")
 		}
-		renderVal(v, g, child)
+		renderVal(v, g, child, isCacheEnabled)
 	}
 }
 
-func renderSlice(slc []interface{}, g *dot.Graph, parent *dot.Node) {
+func renderSlice(slc []interface{}, g *dot.Graph, parent *dot.Node, isCacheEnabled bool) {
 	for _, v := range slc {
-		renderVal(v, g, parent)
+		renderVal(v, g, parent, isCacheEnabled)
 	}
 }
