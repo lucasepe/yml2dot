@@ -85,7 +85,7 @@ func renderMap(m map[string]interface{}, g *dot.Graph, parent *dot.Node) {
 }
 
 func renderSlice(slc []interface{}, g *dot.Graph, parent *dot.Node) {
-	for _, v := range slc {
-		renderVal(v, g, parent)
+	for i := len(slc) - 1; i >= 0; i-- {
+		renderVal(slc[i], g, parent)
 	}
 }
