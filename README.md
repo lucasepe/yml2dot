@@ -88,6 +88,23 @@ and create this graph:
 
 ![](./_examples/Box.java.png)
 
+## Piping YAML strings
+
+You can also pipe YAML strings directly into `yml2dot`, allowing for dynamic generation and transformation of YAML data. This is particularly useful when combining `yml2dot` with other command-line tools in a Unix-style pipeline.
+
+For example, to visualize a YAML string without creating an intermediate file:
+
+```bash
+echo "apiVersion: v1\nkind: Pod\nmetadata:\n  name: mypod" | yml2dot | dot -Tpng > mypod.png
+```
+
+Or, to dynamically generate a YAML configuration and immediately visualize it:
+
+```bash
+generate-yaml-config | yml2dot | dot -Tpng > config.png
+```
+
+This feature enhances `yml2dot`'s flexibility and integration into automated workflows and scripts.
 
 # How to install?
 

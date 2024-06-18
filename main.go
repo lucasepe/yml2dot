@@ -1,9 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -26,12 +27,7 @@ var (
 func main() {
 	configureFlags()
 
-	if flag.CommandLine.Arg(0) == "" {
-		flag.CommandLine.Usage()
-		os.Exit(2)
-	}
-
-	src, err := os.Open(flag.Args()[0])
+	src, err := inputSource()
 	exitOnErr(err)
 	defer src.Close()
 
@@ -49,11 +45,13 @@ func configureFlags() {
 		fmt.Printf("Turn YAML into beautiful Graph.\n\n")
 
 		fmt.Print("USAGE:\n\n")
-		fmt.Printf("  %s [flags] <path/to/your/file>\n\n", name)
+		fmt.Printf("  %s [flags] <path/to/your/file>\n", name)
+		fmt.Printf("  echo \"your yaml here\" | %s\n\n", name)
 
 		fmt.Print("EXAMPLE(s):\n\n")
 		fmt.Printf("  %s -from '/****' -to '****/' MyClass.java | dot -Tpng > output.png\n", name)
-		fmt.Printf("  %s config.yml | dot -Tpng > output.png\n\n", name)
+		fmt.Printf("  %s config.yml | dot -Tpng > output.png\n", name)
+		fmt.Printf("  cat config.yml | %s | dot -Tpng > output.png\n\n", name)
 
 		fmt.Print("FLAGS:\n\n")
 		flag.CommandLine.SetOutput(os.Stdout)
@@ -76,6 +74,14 @@ func configureFlags() {
 
 func appName() string {
 	return filepath.Base(os.Args[0])
+}
+
+// inputSource determines the source of the input, either from a file or stdin.
+func inputSource() (io.ReadCloser, error) {
+	if flag.CommandLine.Arg(0) == "" {
+		return os.Stdin, nil
+	}
+	return os.Open(flag.Args()[0])
 }
 
 // exitOnErr check for an error and eventually exit
